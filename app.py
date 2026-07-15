@@ -298,3 +298,9 @@ Gram-positive infections. For Gram-negative infections, Streptomycin or
 Neomycin is generally the better choice.
 """
     )
+
+    st.markdown(
+        "<div style='text-align:center; margin-top:24px;'>"
+        "(Created in collaboration with Claude Sonnet 4.6)</div>",
+        unsafe_allow_html=True,
+    )
