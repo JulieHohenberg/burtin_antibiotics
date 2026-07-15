@@ -70,7 +70,6 @@ best = long[long["Best"]].copy()
 pos_med = df.loc[df.Gram_Staining == "positive", "Penicillin"].median()
 neg_med = df.loc[df.Gram_Staining == "negative", "Penicillin"].median()
 gap_x = round(neg_med / pos_med)
-worst = df.loc[df.Penicillin.idxmax()]
 
 bacteria_order = pd.concat(
     [df[df.Gram_Staining == g].sort_values("Penicillin", ascending=False) for g in GRAM_ORDER]
@@ -167,26 +166,22 @@ Gram-positive row and dark (ineffective) for nearly every Gram-negative one.
 
     # ---------- Section 2: Penicillin's blind spot ----------
     st.markdown(
-        f"""
+        """
 ### Penicillin by Gram stain
 
 Plotting Penicillin alone on a log scale, the two Gram groups barely overlap.
 Gram-positive bacteria cluster near the bottom, where tiny doses are enough.
-Gram-negative bacteria sit much higher on the scale. The black diamonds mark
-the median for each group, and *{worst.Bacteria}* is called out as the most
-extreme case in the dataset.
+Gram-negative bacteria sit much higher on the scale.
 """
     )
 
     pen = df.copy()
-    extreme = df[df.Bacteria == worst.Bacteria]
-    medians = pd.DataFrame({"Gram_Staining": GRAM_ORDER, "Penicillin": [pos_med, neg_med]})
 
     x_scale = alt.Scale(type="log")
     x_enc = alt.X("Penicillin:Q", title="Penicillin MIC, µg/mL (log scale)", scale=x_scale)
     y_enc = alt.Y("Gram_Staining:N", title=None, sort=GRAM_ORDER)
 
-    points = (
+    strip = (
         alt.Chart(pen)
         .mark_point(size=130, opacity=0.85, filled=True)
         .encode(
@@ -200,30 +195,9 @@ extreme case in the dataset.
                 alt.Tooltip("Penicillin:Q", title="MIC (µg/mL)"),
             ],
         )
-    )
-    median_ticks = (
-        alt.Chart(medians)
-        .mark_point(shape="diamond", size=220, filled=True, color=INK)
-        .encode(x=x_enc, y=y_enc)
-    )
-    median_labels = (
-        alt.Chart(medians)
-        .mark_text(dy=-16, fontSize=11, fontWeight=600, color=INK)
-        .encode(x=x_enc, y=y_enc, text=alt.Text("Penicillin:Q", format=".3g"))
-    )
-    extreme_ring = (
-        alt.Chart(extreme)
-        .mark_point(size=320, filled=False, strokeWidth=1.5, color=INK)
-        .encode(x=x_enc, y=y_enc)
-    )
-    extreme_label = (
-        alt.Chart(extreme)
-        .mark_text(align="left", dx=12, dy=16, fontSize=11, fontStyle="italic", color=INK_SECONDARY)
-        .encode(x=x_enc, y=y_enc, text=alt.value(f"{worst.Bacteria}, {worst.Penicillin:g} µg/mL"))
-    )
-
-    strip = alt.layer(points, median_ticks, median_labels, extreme_ring, extreme_label).properties(
-        height=200, title="Gram-positive and Gram-negative bacteria occupy separate dose ranges"
+        .properties(
+            height=200, title="Gram-positive and Gram-negative bacteria occupy separate dose ranges"
+        )
     )
     st.altair_chart(strip, use_container_width=True)
 
