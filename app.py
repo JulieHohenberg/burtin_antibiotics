@@ -53,13 +53,14 @@ DRUG_COLORS = alt.Scale(domain=DRUG_ORDER, range=[BLUE, AQUA, YELLOW])
 @st.cache_data
 def load_data():
     df = pd.read_csv("burtin_antibiotics.csv")
+    df["Best_Drug"] = df[["Penicillin", "Streptomycin", "Neomycin"]].idxmin(axis=1)
     long = df.melt(
-        id_vars=["Bacteria", "Gram_Staining", "Genus"],
+        id_vars=["Bacteria", "Gram_Staining", "Genus", "Best_Drug"],
         value_vars=["Penicillin", "Streptomycin", "Neomycin"],
         var_name="Antibiotic",
         value_name="MIC",
     )
-    long["Best"] = long.groupby("Bacteria")["MIC"].transform("min") == long["MIC"]
+    long["Best"] = long["Antibiotic"] == long["Best_Drug"]
     return df, long
 
 
@@ -246,7 +247,13 @@ Gram-positive side, while **Neomycin** is the best option for
     )
 
     best_counts = (
-        best.groupby(["Gram_Staining", "Antibiotic"]).size().reset_index(name="Count")
+        best.groupby(["Gram_Staining", "Antibiotic"])
+        .size()
+        .reindex(
+            pd.MultiIndex.from_product([GRAM_ORDER, DRUG_ORDER], names=["Gram_Staining", "Antibiotic"]),
+            fill_value=0,
+        )
+        .reset_index(name="Count")
     )
     count_x = alt.X("Antibiotic:N", title=None, sort=DRUG_ORDER)
     count_y = alt.Y("Count:Q", title="Bacteria for which this drug is most effective")
